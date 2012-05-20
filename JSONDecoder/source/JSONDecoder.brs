@@ -1,4 +1,4 @@
-' JSONDecoder, A Roku JSON parser. Version 1.0, May 20, 2012
+' JSONDecoder, A Roku JSON parser. Version 1.1, May 20, 2012
 '
 ' Copyright (c) 2012, belltown. All rights reserved.
 '
@@ -313,9 +313,9 @@ function JSONDecoder () as object
 						c = m.byt [m.inx + i]
 						if c >= 48 and c <= 57		' 0-9
 							h = c - 48
-						else if c >= 65 and c <= 90	' A-Z
+						else if c >= 65 and c <= 70	' A-F
 							h = c - 55
-						else if c >= 97 and c <= 122	' a-z
+						else if c >= 97 and c <= 102	' a-f
 							h = c - 87
 						else
 							h = 128
