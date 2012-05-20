@@ -1,0 +1,42 @@
+I've written a new JSON parser. Here it is: [url] https://github.com/belltown/Roku/blob/master/JSONDecoder/source/JSONDecoder.brs [/url]
+
+There are already a couple of other JSON parsers out there: one by hoffmcs, [url] http://forums.roku.com/viewtopic.php?f=34&t=30688&p=186934#p186934 [/url], and rdJSONParser in librokudev, see [url] http://forums.roku.com/viewtopic.php?f=34&t=32208&p=200787 [/url] and [url] https://github.com/rokudev/librokudev/blob/master/source/librokudev/source/rokudev_src/rdJSON.brs [/url].
+
+The hoffmcs parser is very slow, although does a fairly good job of parsing most JSON, although strings containing any UNICODE characters are treated as invalid. The librokudev parser is faster than the hoffmcs parser for smaller files, but still rather slow for larger files, and does not parse all valid JSON; for example, it fails to parse JSON text containing names that have characters such as "$", "." and "-", and it won't parsed backslash-escaped characters in strings (except for the " character), and UNICODE characters are not parsed.
+
+The new JSON parser should parse any valid JSON and is faster than the other parsers for larger JSON responses. It will also convert UNICODE characters that have ASCII equivalents.
+
+The parser has no external dependencies. Simply copy the JSONDecoder.brs file into your source directory and use as follows:
+
+[code]
+decoderObject = JSONDecoder ()
+json = decoderObject.decodeJSON ("<json formatted string>")
+if json <> Invalid
+	' Handle the json object/array ...
+else
+	print decoderObject.errorString ()
+endif				
+[/code]
+
+A single JSONDecoder object may be used for multiple calls to decodeJSON ().
+Unicode characters less than \u0080 (128) are converted to ASCII.
+Unicode characters of \u0080 (128) and higher are converted to "." characters.
+Characters with ASCII values of 128 and higher are converted to "." characters.
+The JSON 'null' value is converted to 'invalid'.
+Numbers are converted to integers unless they are too large, or contain a fraction or exponent, in which case a float is used.
+For performance reasons, all valid JSON strings should be handled correctly, but not all invalid JSON will be detected.
+If the input string is not valid JSON, the code should not crash, although it is not defined what will be returned.
+Rudimentary error diagnostics are provided by calling errorString () if decodeJSON () returns Invalid.
+
+I ran some tests on my Roku 1 to compare execution times for the different parsers using the Twitter API, changing the value of rpp to return different numbers of results: 
+[url] http://search.twitter.com/search.json?q=roku&rpp=72&include_entities=true&result_type=mixed [/url]
+
+rpp=1 => 2,304 bytes. JSONDecoder: 0.3 secs, rdJSONParser: 0.05 secs, hoffmcs parser: 1.0 secs
+rpp=10 => 11,331 bytes. JSONDecoder: 1.7 secs, rdJSONParser: 0.4 secs, hoffmcs parser: 7.1 secs
+rpp=50 => 47,000 bytes. JSONDecoder: 7.5 secs, rdJSONParser: 4.9 secs, hoffmcs parser: 57.8 secs
+rpp=78 => 80,002 bytes. JSONDecoder: 12.5 secs, rdJSONParser: 12.6 secs, hoffmcs parser: 140.0 secs
+rpp=100 => 101,195 bytes. JSONDecoder: 15.9 secs, rdJSONParser: 19.8 secs, hoffmcs parser: 212.3 secs
+
+Obviously, XML responses are parsed more efficiently, since Roku has native support for XML. However, not all APIs provide XML output. For smaller JSON queries (less than 75K bytes), rdJSONParser is faster although may not necessarily parse all JSON responses. For larger queries, JSONDecoder seems to work faster and should parse all valid JSON responses. The hoffmcs parser seems slower in all cases.
+
+Send a PM to [url= http://forums.roku.com/ucp.php?i=pm&mode=compose&u=37784]belltown [/url] if you find any problems.
